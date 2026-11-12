@@ -12,7 +12,6 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def reset_data():
     from app.data.investigation_data import clues, suspects
-    from app.data import investigation_data
     original_suspects = {
         "prince_charming": {
             "id": "prince_charming", "name": "Prince Charming",
