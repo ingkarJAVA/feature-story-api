@@ -35,9 +35,19 @@ def prepared_database():
     from app.database import engine
 
     with engine.begin() as conn:
-        conn.execute(text("DROP TABLE IF EXISTS choices, scenes, stories CASCADE"))
+        conn.execute(
+            text(
+                "DROP TABLE IF EXISTS discovered_clues, session_choices, "
+                "game_sessions, clues, suspects, choices, scenes, stories CASCADE"
+            )
+        )
         conn.execute(text("DROP TABLE IF EXISTS alembic_version"))
-        conn.execute(text("DROP SEQUENCE IF EXISTS scene_id_seq, choice_id_seq"))
+        conn.execute(
+            text(
+                "DROP SEQUENCE IF EXISTS scene_id_seq, choice_id_seq, "
+                "game_session_id_seq"
+            )
+        )
 
     command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
     yield

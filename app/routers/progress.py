@@ -1,5 +1,8 @@
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
 
 from app.schemas.progress import (
     SessionCreate,
@@ -23,21 +26,21 @@ router = APIRouter(
     response_model=SessionOut,
     status_code=status.HTTP_201_CREATED
 )
-def create_player_session(data: SessionCreate):
+def create_player_session(data: SessionCreate, db: Session = Depends(get_db)):
     """Start a new player session."""
 
-    return progress_service.create_session(data.player_name)
+    return progress_service.create_session(db, data.player_name)
 
 
 @router.get(
     "/sessions/{session_id}",
     response_model=SessionOut
 )
-def get_player_session(session_id: str):
+def get_player_session(session_id: str, db: Session = Depends(get_db)):
     """Get the current progress of a player."""
 
     try:
-        return progress_service.get_session(session_id)
+        return progress_service.get_session(db, session_id)
     except KeyError as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -51,7 +54,8 @@ def get_player_session(session_id: str):
 )
 def update_player_session(
     session_id: str,
-    data: SessionUpdate
+    data: SessionUpdate,
+    db: Session = Depends(get_db)
 ):
     """Update the player's information."""
 
@@ -59,6 +63,7 @@ def update_player_session(
         update_data = data.model_dump(exclude_unset=True)
 
         return progress_service.update_session(
+            db,
             session_id,
             **update_data
         )
@@ -79,11 +84,11 @@ def update_player_session(
     "/sessions/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-def delete_player_session(session_id: str):
+def delete_player_session(session_id: str, db: Session = Depends(get_db)):
     """Delete a player session."""
 
     try:
-        progress_service.delete_session(session_id)
+        progress_service.delete_session(db, session_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except KeyError as error:
@@ -99,12 +104,14 @@ def delete_player_session(session_id: str):
 )
 def submit_player_choice(
     session_id: str,
-    data: ChoiceRequest
+    data: ChoiceRequest,
+    db: Session = Depends(get_db)
 ):
     """Submit a choice and move to the next story scene."""
 
     try:
         return progress_service.make_choice(
+            db,
             session_id,
             data.choice_id
         )
@@ -125,11 +132,11 @@ def submit_player_choice(
     "/sessions/{session_id}/ending",
     response_model=EndingOut
 )
-def get_player_ending(session_id: str):
+def get_player_ending(session_id: str, db: Session = Depends(get_db)):
     """Calculate and return the player's story ending."""
 
     try:
-        return progress_service.get_ending(session_id)
+        return progress_service.get_ending(db, session_id)
 
     except KeyError as error:
         raise HTTPException(
