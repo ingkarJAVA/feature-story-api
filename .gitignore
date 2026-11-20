@@ -225,3 +225,5 @@ __marimo__/
 
 .history/
 .vscode/
+
+.idea/
