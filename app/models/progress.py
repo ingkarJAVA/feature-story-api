@@ -1,4 +1,3 @@
-
 """Database models for Player Progress & Endings (Student 3)."""
 
 from sqlalchemy import Boolean, ForeignKey, String

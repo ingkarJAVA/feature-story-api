@@ -171,8 +171,18 @@ def test_get_ending_completes_session():
 
     # Prepare the session as if the player reached the final scene
     # and correctly accused the murderer.
-    sessions[session_id]["current_scene_id"] = "scene_15"
-    sessions[session_id]["accusation_correct"] = True
+    from sqlalchemy import text
+    from app.database import SessionLocal
+
+    with SessionLocal() as db:
+        db.execute(
+            text(
+                "UPDATE game_sessions SET current_scene_id = 'scene_15', "
+                "accusation_correct = true WHERE id = :i"
+            ),
+            {"i": session_id},
+        )
+        db.commit()
 
     response = client.get(
         f"/api/sessions/{session_id}/ending"

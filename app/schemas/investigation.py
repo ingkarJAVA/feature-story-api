@@ -54,6 +54,7 @@ class ClueOut(BaseModel):
     location: str
     related_scene_id: str
     importance: Importance
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DiscoverClueRequest(BaseModel):

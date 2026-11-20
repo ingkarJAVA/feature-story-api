@@ -3,4 +3,5 @@
 Student 2 and Student 3: add your model imports below.
 """
 from app.models.story import Choice, Scene, Story  # noqa: F401
-from app.models.progress import GameSession, SessionChoice
+from app.models.investigation import Clue, DiscoveredClue, Suspect  # noqa: F401
+from app.models.progress import GameSession, SessionChoice  # noqa: F401

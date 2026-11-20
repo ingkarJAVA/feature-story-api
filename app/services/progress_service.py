@@ -1,4 +1,3 @@
-
 """Business logic for Player Progress & Endings."""
 
 from sqlalchemy import select, text
