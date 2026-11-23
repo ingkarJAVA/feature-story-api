@@ -37,7 +37,7 @@ def prepared_database():
     with engine.begin() as conn:
         conn.execute(
             text(
-                "DROP TABLE IF EXISTS discovered_clues, session_choices, "
+                "DROP TABLE IF EXISTS users, discovered_clues, session_choices, "
                 "game_sessions, clues, suspects, choices, scenes, stories CASCADE"
             )
         )
