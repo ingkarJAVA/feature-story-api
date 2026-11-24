@@ -7,6 +7,7 @@ from app.schemas.investigation import (
     ClueUpdate, DiscoverClueRequest, SuspectCreate, SuspectOut, SuspectUpdate
 )
 from app.services import investigation_service as service
+from app.core.authorization import require_session_owner, require_admin
 
 router = APIRouter(prefix="/api", tags=["Investigation"])
 
@@ -24,7 +25,7 @@ def get_suspect(suspect_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(exc))
 
 
-@router.post("/suspects", response_model=SuspectOut, status_code=status.HTTP_201_CREATED)
+@router.post("/suspects", response_model=SuspectOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)],)
 def create_suspect(payload: SuspectCreate, db: Session = Depends(get_db)):
     try:
         return service.create_suspect(db, payload)
@@ -32,7 +33,7 @@ def create_suspect(payload: SuspectCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail=str(exc))
 
 
-@router.patch("/suspects/{suspect_id}", response_model=SuspectOut)
+@router.patch("/suspects/{suspect_id}", response_model=SuspectOut,    dependencies=[Depends(require_admin)],)
 def update_suspect(suspect_id: str, payload: SuspectUpdate, db: Session = Depends(get_db)):
     try:
         return service.update_suspect(db, suspect_id, payload)
@@ -40,7 +41,7 @@ def update_suspect(suspect_id: str, payload: SuspectUpdate, db: Session = Depend
         raise HTTPException(status_code=404, detail=str(exc))
 
 
-@router.delete("/suspects/{suspect_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/suspects/{suspect_id}", status_code=status.HTTP_204_NO_CONTENT,    dependencies=[Depends(require_admin)],)
 def delete_suspect(suspect_id: str, db: Session = Depends(get_db)):
     try:
         service.delete_suspect(db, suspect_id)
@@ -67,7 +68,7 @@ def get_clue(clue_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(exc))
 
 
-@router.post("/clues", response_model=ClueOut, status_code=status.HTTP_201_CREATED)
+@router.post("/clues", response_model=ClueOut, status_code=status.HTTP_201_CREATED,    dependencies=[Depends(require_admin)],)
 def create_clue(payload: ClueCreate, db: Session = Depends(get_db)):
     try:
         return service.create_clue(db, payload)
@@ -77,7 +78,7 @@ def create_clue(payload: ClueCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail=str(exc))
 
 
-@router.patch("/clues/{clue_id}", response_model=ClueOut)
+@router.patch("/clues/{clue_id}", response_model=ClueOut,    dependencies=[Depends(require_admin)],)
 def update_clue(clue_id: str, payload: ClueUpdate, db: Session = Depends(get_db)):
     try:
         return service.update_clue(db, clue_id, payload)
@@ -85,7 +86,11 @@ def update_clue(clue_id: str, payload: ClueUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail=str(exc))
 
 
-@router.delete("/clues/{clue_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/clues/{clue_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_clue(clue_id: str, db: Session = Depends(get_db)):
     try:
         service.delete_clue(db, clue_id)
@@ -99,6 +104,7 @@ def delete_clue(clue_id: str, db: Session = Depends(get_db)):
     "/investigations/{session_id}/discover",
     response_model=ClueOut,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_session_owner)],
 )
 def discover_clue(session_id: str, payload: DiscoverClueRequest, db: Session = Depends(get_db)):
     try:
@@ -112,6 +118,7 @@ def discover_clue(session_id: str, payload: DiscoverClueRequest, db: Session = D
 @router.post(
     "/investigations/{session_id}/accuse",
     response_model=AccusationResponse,
+    dependencies=[Depends(require_session_owner)],
 )
 def accuse_suspect(session_id: str, payload: AccusationRequest, db: Session = Depends(get_db)):
     try:

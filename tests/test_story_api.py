@@ -24,19 +24,18 @@ app_for_tests.include_router(story.router)
 
 
 @pytest.fixture(autouse=True)
-def fresh_data(prepared_database):
-    """Empty the test database and load the original seed data before every test."""
-    with SessionLocal() as db:
-        db.execute(text("TRUNCATE choices, scenes, stories CASCADE"))
-        db.execute(text("ALTER SEQUENCE scene_id_seq RESTART WITH 1"))
-        db.execute(text("ALTER SEQUENCE choice_id_seq RESTART WITH 1"))
-        db.commit()
-        seed(db)
+def fresh_data(fresh_game_data):
+    """Prepare the database before every story test."""
+    pass
 
 
 @pytest.fixture
-def client():
-    return TestClient(app_for_tests)
+def client(admin_user):
+    """Create an authenticated administrator test client."""
+
+    with TestClient(app_for_tests) as test_client:
+        test_client.headers.update(admin_user["headers"])
+        yield test_client
 
 
 # ---------------------------------------------------------------------------

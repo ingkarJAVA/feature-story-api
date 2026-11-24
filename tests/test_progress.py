@@ -1,21 +1,21 @@
-
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.data.progress_data import sessions, reset_sessions
 
 
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def clean_sessions():
-    """Reset player sessions before and after each test."""
-    reset_sessions()
-    yield
-    reset_sessions()
+def authenticated_player(player_user):
+    """Prepare the database and authenticate the player."""
 
+    client.headers.update(player_user["headers"])
+
+    yield
+
+    client.headers.pop("Authorization", None)
 
 def test_create_session():
     """A player can create a new session."""

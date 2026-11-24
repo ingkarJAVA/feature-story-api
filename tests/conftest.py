@@ -51,3 +51,72 @@ def prepared_database():
 
     command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
     yield
+
+@pytest.fixture
+def fresh_game_data(prepared_database):
+    """Reset and seed the PostgreSQL test database."""
+
+    from sqlalchemy import text
+    from app.database import SessionLocal
+    from app.seed import seed as seed_story
+    from app.seed_investigation import seed as seed_investigation
+
+    with SessionLocal() as db:
+        db.execute(text(
+            "TRUNCATE users, discovered_clues, session_choices, "
+            "game_sessions, clues, suspects, choices, scenes, "
+            "stories RESTART IDENTITY CASCADE"
+        ))
+
+        db.execute(text("ALTER SEQUENCE scene_id_seq RESTART WITH 1"))
+        db.execute(text("ALTER SEQUENCE choice_id_seq RESTART WITH 1"))
+        db.execute(text("ALTER SEQUENCE game_session_id_seq RESTART WITH 1"))
+
+        db.commit()
+
+        seed_story(db)
+        seed_investigation(db)
+
+
+@pytest.fixture
+def make_test_user(prepared_database):
+    """Create a test user and return their authentication headers."""
+
+    from app.database import SessionLocal
+    from app.models.user import User
+    from app.core.security import hash_password, create_access_token
+
+    def create_user(username: str, role: str = "user"):
+        with SessionLocal() as db:
+            user = User(
+                email=f"{username}@example.com",
+                username=username,
+                hashed_password=hash_password("TestPassword123"),
+                role=role,
+                is_active=True,
+            )
+
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+            return {
+                "id": user.id,
+                "headers": {
+                    "Authorization": (
+                        f"Bearer {create_access_token(user.id)}"
+                    )
+                },
+            }
+
+    return create_user
+
+
+@pytest.fixture
+def player_user(fresh_game_data, make_test_user):
+    return make_test_user("shrek")
+
+
+@pytest.fixture
+def admin_user(fresh_game_data, make_test_user):
+    return make_test_user("admin", role="admin")

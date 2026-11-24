@@ -13,6 +13,9 @@ from app.schemas.progress import (
 )
 
 from app.services import progress_service
+from app.core.dependencies import get_current_user
+from app.core.authorization import require_session_owner
+from app.models.user import User
 
 
 router = APIRouter(
@@ -26,15 +29,24 @@ router = APIRouter(
     response_model=SessionOut,
     status_code=status.HTTP_201_CREATED
 )
-def create_player_session(data: SessionCreate, db: Session = Depends(get_db)):
-    """Start a new player session."""
+def create_player_session(
+    data: SessionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Start a new session owned by the authenticated user."""
 
-    return progress_service.create_session(db, data.player_name)
+    return progress_service.create_session(
+        db,
+        data.player_name,
+        current_user.id,
+    )
 
 
 @router.get(
     "/sessions/{session_id}",
-    response_model=SessionOut
+    response_model=SessionOut,
+    dependencies=[Depends(require_session_owner)]
 )
 def get_player_session(session_id: str, db: Session = Depends(get_db)):
     """Get the current progress of a player."""
@@ -50,7 +62,8 @@ def get_player_session(session_id: str, db: Session = Depends(get_db)):
 
 @router.patch(
     "/sessions/{session_id}",
-    response_model=SessionOut
+    response_model=SessionOut,
+    dependencies=[Depends(require_session_owner)]
 )
 def update_player_session(
     session_id: str,
@@ -82,7 +95,8 @@ def update_player_session(
 
 @router.delete(
     "/sessions/{session_id}",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_session_owner)]
 )
 def delete_player_session(session_id: str, db: Session = Depends(get_db)):
     """Delete a player session."""
@@ -100,7 +114,8 @@ def delete_player_session(session_id: str, db: Session = Depends(get_db)):
 
 @router.post(
     "/sessions/{session_id}/choices",
-    response_model=SessionOut
+    response_model=SessionOut,
+    dependencies=[Depends(require_session_owner)]
 )
 def submit_player_choice(
     session_id: str,
@@ -130,7 +145,8 @@ def submit_player_choice(
 
 @router.get(
     "/sessions/{session_id}/ending",
-    response_model=EndingOut
+    response_model=EndingOut,
+    dependencies=[Depends(require_session_owner)]
 )
 def get_player_ending(session_id: str, db: Session = Depends(get_db)):
     """Calculate and return the player's story ending."""

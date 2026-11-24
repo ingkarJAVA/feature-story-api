@@ -68,6 +68,7 @@ def session_to_dict(db: Session, session: GameSession) -> dict:
 
     return {
         "id": session.id,
+        "user_id":session.user_id,
         "player_name": session.player_name,
         "current_scene_id": session.current_scene_id,
         "discovered_clue_ids": get_discovered_clue_ids(db, session.id),
@@ -78,7 +79,11 @@ def session_to_dict(db: Session, session: GameSession) -> dict:
     }
 
 
-def create_session(db: Session, player_name: str) -> dict:
+def create_session(
+    db: Session,
+    player_name: str,
+    user_id: int,
+) -> dict:
     """Create a new game session in PostgreSQL."""
 
     initial_scene = db.get(Scene, "scene_1")
@@ -92,6 +97,7 @@ def create_session(db: Session, player_name: str) -> dict:
 
     session = GameSession(
         id=f"session_{session_number}",
+        user_id=user_id,
         player_name=player_name,
         current_scene_id=initial_scene.id,
         status="active",

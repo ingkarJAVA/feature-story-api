@@ -51,6 +51,7 @@ class SessionOut(BaseModel):
     """Public information about a player session."""
 
     id: str
+    user_id: int
     player_name: str
     current_scene_id: str
     discovered_clue_ids: list[str]
