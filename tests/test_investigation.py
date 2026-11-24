@@ -11,8 +11,7 @@ from sqlalchemy import text
 
 from app.database import SessionLocal
 from app.main import app
-from app.seed import seed as seed_story
-from app.seed_investigation import seed as seed_investigation
+
 
 client = TestClient(app)
 
@@ -23,19 +22,14 @@ ALL_CLUES = [
 
 
 @pytest.fixture(autouse=True)
-def fresh_data(prepared_database):
-    with SessionLocal() as db:
-        db.execute(text(
-            "TRUNCATE discovered_clues, session_choices, game_sessions, "
-            "clues, suspects, choices, scenes, stories CASCADE"
-        ))
-        db.execute(text("ALTER SEQUENCE scene_id_seq RESTART WITH 1"))
-        db.execute(text("ALTER SEQUENCE choice_id_seq RESTART WITH 1"))
-        db.execute(text("ALTER SEQUENCE game_session_id_seq RESTART WITH 1"))
-        db.commit()
-        seed_story(db)
-        seed_investigation(db)
+def fresh_data(admin_user):
+    """Prepare the database and authenticate the test user."""
 
+    client.headers.update(admin_user["headers"])
+
+    yield
+
+    client.headers.pop("Authorization", None)
 
 def new_session(scene_id: str = "scene_1") -> str:
     """Create a session through the API and (optionally) move it to a scene."""
@@ -264,8 +258,13 @@ def test_deleting_session_deletes_its_discovered_clues():
 
 def test_cannot_delete_clue_that_a_player_collected():
     session_id = new_session("scene_2")
-    discover(session_id, "poisoned_wine_glass")
-    assert client.delete("/api/clues/poisoned_wine_glass").status_code == 409
+
+    collected = discover(session_id, "poisoned_wine_glass")
+    assert collected.status_code == 201, collected.text
+
+    response = client.delete("/api/clues/poisoned_wine_glass")
+
+    assert response.status_code == 409, response.text
 
 
 def test_cannot_delete_suspect_that_was_accused():

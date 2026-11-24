@@ -218,3 +218,74 @@ This project uses in-memory Python dictionaries to store story data, clues, susp
 ## Team Project
 
 Developed as a collaborative REST API project using FastAPI and Python.
+
+
+## Authentication and Authorization
+
+The application implements secure user authentication and authorization using JWT access tokens, Argon2 password hashing, role-based access control, and resource ownership.
+
+### Authentication Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Authenticate and receive a JWT access token |
+| GET | `/auth/me` | Retrieve the authenticated user's information |
+
+Protected endpoints require the following HTTP header:
+
+`Authorization: Bearer <access_token>`
+
+### Authorization
+
+The application supports two user roles:
+
+- **User:** Can create game sessions and access, modify, or delete their own sessions.
+- **Admin:** Can additionally create, update, and delete shared story content, including scenes, choices, suspects, and clues.
+
+All game sessions are protected by resource ownership. Users, including administrators, cannot access another user's game session.
+
+Public story, scene, choice, suspect, and clue retrieval endpoints remain accessible without authentication.
+
+### HTTP Status Codes
+
+| Status | Description |
+|---|---|
+| 401 Unauthorized | Missing, invalid, or expired authentication token |
+| 403 Forbidden | Insufficient permissions or incorrect resource ownership |
+| 404 Not Found | Requested resource does not exist |
+| 409 Conflict | Duplicate resource or conflicting operation |
+| 422 Unprocessable Entity | Invalid request data |
+
+### Database Migrations
+
+Apply the latest database migrations:
+
+`alembic upgrade head`
+
+Migration 0007 introduces the relationship between users and game sessions through the `user_id` foreign key.
+
+### Testing
+
+The project uses pytest and FastAPI TestClient with a separate PostgreSQL test database.
+
+Configure `TEST_DATABASE_URL` in the local `.env` file before running tests. The test database must be different from the main application database because test fixtures reset its contents.
+
+Run the complete test suite:
+
+`python -m pytest -q`
+
+The test suite covers:
+
+- User registration and password hashing
+- Duplicate user prevention
+- Login and JWT validation
+- Protected endpoints
+- Resource ownership
+- Role-based authorization
+- Unauthorized modification and deletion attempts
+- Story and scene management
+- Investigation functionality
+- Player progress and endings
+
+**Test results: 208 passed, 0 failed.**

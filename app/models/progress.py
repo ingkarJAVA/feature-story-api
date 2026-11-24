@@ -1,6 +1,6 @@
 """Database models for Player Progress & Endings (Student 3)."""
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -14,6 +14,16 @@ class GameSession(Base):
     id: Mapped[str] = mapped_column(
         String(50),
         primary_key=True
+    )
+    user_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey(
+            "users.id",
+            name="fk_game_sessions_user_id",
+            ondelete="CASCADE"
+        ),
+        nullable=True,
+        index=True
     )
 
     player_name: Mapped[str] = mapped_column(

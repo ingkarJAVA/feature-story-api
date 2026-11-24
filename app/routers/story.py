@@ -19,6 +19,7 @@ from app.schemas.story import (
     StoryResponse,
 )
 from app.services import story_service
+from app.core.authorization import require_admin
 
 router = APIRouter(prefix="/api", tags=["Story & Scenes"])
 
@@ -42,17 +43,17 @@ def get_scene(scene_id: str, db: Session = Depends(get_db)):
     return story_service.get_scene(db, scene_id)
 
 
-@router.post("/scenes", response_model=SceneResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/scenes", response_model=SceneResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)])
 def create_scene(data: SceneCreate, db: Session = Depends(get_db)):
     return story_service.create_scene(db, data)
 
 
-@router.patch("/scenes/{scene_id}", response_model=SceneResponse)
+@router.patch("/scenes/{scene_id}", response_model=SceneResponse, dependencies=[Depends(require_admin)])
 def update_scene(scene_id: str, data: SceneUpdate, db: Session = Depends(get_db)):
     return story_service.update_scene(db, scene_id, data)
 
 
-@router.delete("/scenes/{scene_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/scenes/{scene_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
 def delete_scene(scene_id: str, db: Session = Depends(get_db)):
     story_service.delete_scene(db, scene_id)
 
@@ -68,16 +69,17 @@ def list_choices(scene_id: str, db: Session = Depends(get_db)):
     "/scenes/{scene_id}/choices",
     response_model=ChoiceResponse,
     status_code=status.HTTP_201_CREATED,
+dependencies=[Depends(require_admin)]
 )
 def create_choice(scene_id: str, data: ChoiceCreate, db: Session = Depends(get_db)):
     return story_service.create_choice(db, scene_id, data)
 
 
-@router.patch("/choices/{choice_id}", response_model=ChoiceResponse)
+@router.patch("/choices/{choice_id}", response_model=ChoiceResponse, dependencies=[Depends(require_admin)])
 def update_choice(choice_id: str, data: ChoiceUpdate, db: Session = Depends(get_db)):
     return story_service.update_choice(db, choice_id, data)
 
 
-@router.delete("/choices/{choice_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/choices/{choice_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)])
 def delete_choice(choice_id: str, db: Session = Depends(get_db)):
     story_service.delete_choice(db, choice_id)
