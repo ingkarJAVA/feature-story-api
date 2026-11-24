@@ -1,34 +1,79 @@
-"""Password hashing helpers (Argon2id).
+"""Password hashing and JWT helpers."""
 
-Reusable by the whole team:
+from datetime import datetime, timedelta, timezone
 
-    from app.core.security import hash_password, verify_password
-
-Student 2 uses verify_password() in the login endpoint.
-
-A hash is one-way: you cannot turn it back into the password. Every hash
-also contains its own random salt, so hashing the same password twice gives
-two different strings - that is normal.
-"""
+import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 
-# PasswordHasher() uses Argon2id with safe default settings.
+from app.core import config
+
+
 _password_hasher = PasswordHasher()
+
+TOKEN_TYPE = "access"
 
 
 def hash_password(password: str) -> str:
-    """Return a salted Argon2id hash that is safe to store in the database."""
+    """Return a secure Argon2id password hash."""
     return _password_hasher.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Return True if the plain password matches the stored hash, else False.
-
-    Never raises for a wrong password or a broken hash - it just returns False.
-    """
+def verify_password(
+    plain_password: str,
+    hashed_password: str,
+) -> bool:
+    """Check whether the password matches the stored hash."""
     try:
-        return _password_hasher.verify(hashed_password, plain_password)
+        return _password_hasher.verify(
+            hashed_password,
+            plain_password,
+        )
     except (VerificationError, InvalidHashError):
-        # VerifyMismatchError (wrong password) is a kind of VerificationError.
         return False
+
+
+DUMMY_HASH = hash_password("this-user-does-not-exist")
+
+
+def create_access_token(
+    user_id: int,
+    expires_delta: timedelta | None = None,
+) -> str:
+    """Create a signed JWT access token."""
+
+    now = datetime.now(timezone.utc)
+
+    if expires_delta is None:
+        expires_delta = timedelta(
+            minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+
+    payload = {
+        "sub": str(user_id),
+        "type": TOKEN_TYPE,
+        "iat": now,
+        "exp": now + expires_delta,
+    }
+
+    return jwt.encode(
+        payload,
+        config.SECRET_KEY,
+        algorithm=config.ALGORITHM,
+    )
+
+
+def decode_access_token(token: str) -> dict:
+    """Validate the JWT and return its payload."""
+
+    payload = jwt.decode(
+        token,
+        config.SECRET_KEY,
+        algorithms=[config.ALGORITHM],
+        options={"require": ["exp", "sub"]},
+    )
+
+    if payload.get("type") != TOKEN_TYPE:
+        raise jwt.InvalidTokenError("Wrong token type")
+
+    return payload
